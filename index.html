@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>디자인 예제</title>
     <style>
-        body {
+body {
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -156,11 +156,7 @@
     </div>
     <div class="content">
         <img src="image.png" alt="층별 배치도">
-        <div id="overlay-1" class="overlay blue"
-            style="top: 88.89px; left: 8.89px; width: 370px; height: 80px; bgColor: 'rgba(0, 0, 255, 0.5)'; borderColor: 'blue'; filled: false">
-            <div class="text">즉시 입장 가능</div>
-        </div>
-        <div id="overlay-2" class="overlay blue" style="top: 88.89px; left: 537.779px; width: 370px; height: 80px;">
+        <div id="overlay-1" class="overlay blue" style="top: 88.89px; left: 8.89px; width: 370px; height: 80px;">
             <div class="text">즉시 입장 가능</div>
         </div>
         <div id="overlay-3" class="overlay blue" style="top: 240px; left: 8.889px; width: 370px; height: 80px;">
@@ -206,8 +202,18 @@
         <button onclick="applyChanges()">적용</button>
     </div>
     <button onclick="authenticateAdmin()" class="admin-button">관리자 모드</button>
+
     <script>
+        // WebSocket 연결 설정
+        const ws = new WebSocket('ws://localhost:8080');
+
+        ws.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            updateOverlay(data.overlay, data.status);
+        };
+
         function showOverlay(button) {
+
             var dynamicOverlaysContainer = document.getElementById('dynamic-overlays');
             dynamicOverlaysContainer.innerHTML = ''; // 기존 오버레이 제거
 
@@ -337,7 +343,7 @@
         }
 
         function authenticateAdmin() {
-            var password = prompt("비밀번호를 입력하세요:");
+           var password = prompt("비밀번호를 입력하세요:");
             if (password === '0428') {
                 toggleAdminPanel(true);
             } else {
@@ -355,20 +361,30 @@
         }
 
         function applyChanges() {
-            var selectedOverlay = document.getElementById('overlay-select').value;
-            var selectedStatus = document.getElementById('status-select').value;
-            var overlayElement = document.getElementById(selectedOverlay);
+            const selectedOverlay = document.getElementById('overlay-select').value;
+            const selectedStatus = document.getElementById('status-select').value;
+            updateOverlay(selectedOverlay, selectedStatus);
+
+            // 서버로 상태 변경 전송
+            ws.send(JSON.stringify({
+                overlay: selectedOverlay,
+                status: selectedStatus
+            }));
+        }
+
+        function updateOverlay(overlayId, status) {
+            const overlayElement = document.getElementById(overlayId);
 
             overlayElement.classList.remove('blue', 'yellow', 'red');
-            if (selectedStatus === 'blue') {
+            if (status === 'blue') {
                 overlayElement.classList.add('blue');
                 overlayElement.querySelector('.text').style.backgroundColor = 'rgba(0, 0, 255, 0.5)';
                 overlayElement.querySelector('.text').textContent = '즉시 입장 가능';
-            } else if (selectedStatus === 'yellow') {
+            } else if (status === 'yellow') {
                 overlayElement.classList.add('yellow');
                 overlayElement.querySelector('.text').style.backgroundColor = 'rgba(255, 255, 0, 0.5)';
                 overlayElement.querySelector('.text').textContent = '대기 있음';
-            } else if (selectedStatus === 'red') {
+            } else if (status === 'red') {
                 overlayElement.classList.add('red');
                 overlayElement.querySelector('.text').style.backgroundColor = 'rgba(255, 0, 0, 0.5)';
                 overlayElement.querySelector('.text').textContent = '혼잡';
